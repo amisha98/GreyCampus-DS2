@@ -1,0 +1,229 @@
+---
+title: "Assignment 4"
+author: "Amisha Murarka"
+date: "11/03/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#install if necessary
+#install.packages('gtools')
+#load library
+library(gtools)
+
+```
+
+## Scenerio 1
+
+The World Values Survey is an ongoing worldwide survey that polls the world population about perceptions of life, work, family, politics, etc. The most recent phase of the survey that polled 77,882 people from 57 countries estimates that 36.2% of the world's population agrees with the statement "Men should have more right to a job than women." The survey also estimates that 13.8% of people have a university degree or higher and that 3.6% of people fit both criteria. 
+
+#### Question 1: 
+Are agreeing with the statement "Men should have more right to a job than women" and having a university degree or higher disjoint events?
+
+##### Solution:
+The given two events are not disjoint events as people who agree with the statement "Men should have more right to a job than women" can have a university degree also. The percentage estimates given are for the population and the respondants for both the events could overlap. We also know that probability of event A and event B is not 0 hence we cans say that they are not disjoint events.
+
+| *Population - **77882***
+| *Event A - Agreeing with the statement "Men should have more right to a job than women"*
+| *A - **36.2%***
+| *Event B - Having a university degree or higher*
+| *B - **13.8%***
+| *A & B - **3.6%***
+
+#### Question 2: 
+Draw a Venn diagram summarizing the variables and their associated probabilities.
+
+##### Solution:
+```{r}
+
+#install.packages("VennDiagram")
+library("VennDiagram")
+
+pop <- 77882
+a <- pop*0.362
+pa <- a/pop # Probability of event A
+b <- pop*0.138
+pb <- b/pop # Probability of event B
+both <- pop*0.036
+pboth <- both/pop # Probability of A intersection B
+
+# Plotting the Venn Diagram for both event probabilities
+grid.newpage()  # Move to new plotting page
+draw.pairwise.venn(area1 = pa,   # Create pairwise venn diagram
+                   area2 = pb,
+                   cross.area = pboth,
+                   lty = "blank",
+                   fill = c("pink", "green"),
+                   category = c("A","B"))
+
+```
+
+#### Question 3: 
+What is the probability that a randomly drawn person has a university degree or higher or agrees with the statement about men having more right to a job than women?
+
+##### Solution:
+0.464
+
+```{r}
+
+#Applying general addition rule to find probability of event A or B
+p_a_or_b <- (pa+pb-pboth) 
+p_a_or_b #Probability of a randomly drawn person having a university degree or higher or agreeing with the statement
+
+```
+
+
+#### Question 4: 
+What percent of the world population do not have a university degree and disagree with the statement about men having more right to a job than women?
+
+##### Solution:
+53.6%
+
+```{r}
+
+#Probability of neither event A nor event B = 1 - Probability of event A or B
+p_not_a_and_b <- 1-(p_a_or_b)
+p_not_a_and_b*100 # Displaying the probability as percentage
+
+```
+
+#### Question 5: 
+Does it appear that the event that someone agrees with the statement is independent of the event that they have a university degree or higher?
+
+##### Solution:
+Both the events are not independent as P(A and B) != P(A)*P(B)
+
+```{r}
+
+paste ("P(A and B) = ",pboth)
+paste ("P(A)*P(B) = ",(pa*pb))
+
+```
+
+
+#### Question 6: 
+What is the probability that at least 1 in 5 randomly selected people to agree with the statement about men having more right to a job than women?
+
+##### Solution:
+0.8942931
+
+```{r}
+
+P_A <- pa #Probability of a person agreeing to the statement
+P_Not_A <- 1-P_A #Probability of a person not agreeing to the statement
+#Pro of atleast one out of 5 agreeing to the statement = 1 - [Prob of not agreeing to the statement]^5
+P_ATLEAST_ONE_AGREE <- 1-P_Not_A^5 
+P_ATLEAST_ONE_AGREE
+
+```
+
+## Scenerio 2
+
+As of 2009, Swaziland had the highest HIV prevalence in the world. 25.9% of this country's population is infected with HIV. The ELISA test is one of the first and most accurate tests for HIV. For those who carry HIV, the ELISA test is 99.7% accurate. For those who do not carry HIV, the test is 92.6% accurate. If an individual from Swaziland has tested positive, what is the probability that he carries HIV? Create a tree diagram to calculate the probability.
+
+Prob(HIV) = 0.259
+Prob(Not HIV) = 1-0.259 = 0.741
+Prob(Positive|HIV) = 0.997 
+Prob(Positive|Not HIV) = 0.926
+
+#### Question 1: 
+If an individual from Swaziland has tested positive, what is the probability that he carries HIV?
+
+##### Solution:
+0.8248434
+
+```{r}
+
+p_HIV<-0.259
+p_Not_HIV<-1-p_HIV
+p_Positive_Given_HIV <- 0.997
+p_Negative_Given_Not_HIV <- 0.926
+p_Positive_Given_Not_HIV <- 1-p_Negative_Given_Not_HIV
+p_Negative_Given_HIV <- 1-p_Positive_Given_HIV
+
+P_HIV_AND_Positive <- p_HIV * p_Positive_Given_HIV 
+P_HIV_AND_Negative <- p_HIV*p_Negative_Given_HIV
+
+P_Not_HIV_AND_Negative <- p_Not_HIV * p_Negative_Given_Not_HIV 
+P_Not_HIV_AND_Positive <- p_Not_HIV*p_Positive_Given_Not_HIV
+
+p_Positive <- P_HIV_AND_Positive + P_Not_HIV_AND_Positive 
+P_HIV_GIVEN_Positive <- P_HIV_AND_Positive / p_Positive
+P_HIV_GIVEN_Positive
+
+```
+
+
+#### Question 2: 
+According to a 2013 Gallup poll, worldwide only 13% of employees are engaged at work (psychologically committed to their jobs and likely to be making positive contributions to their organizations). Among a random sample of 10 employees, what is the probability that 8 of them are engaged at work?
+
+##### Solution:
+2.77842e-06
+
+```{r}
+
+# p_Engaged <- 0.13
+# p_Not_Engaged <- 1-p_Engaged
+# 
+# p_8_Engaged <- nrow(combinations(n=10,r=8)) * p_Engaged^8 * p_Not_Engaged^2
+# p_8_Engaged 
+
+# Probability of 8 employees out of 10 being engaged at work
+dbinom(8, size = 10, p = 0.13)
+
+#Plotting the binomial distribution
+plot(0:10, dbinom(0:10, size = 10, p = 0.13),type='h',main='Binomial Distribution (n=245, p=0.25)',
+     ylab='Probability',
+     xlab ='Successes',)
+
+```
+
+
+#### Question 3: 
+Recent study: “Facebook users get more than they give”
+
+friend requests: 40% made, 63% received at least one
+likes: liked 14 times, had their content “liked” 20 times, on average
+messages: sent 9 messages, received 12, on average
+ tags:12% tagged a friend in a photo, but 35% tagged other findings:
+25% considered power users
+average Facebook user has 245 friends
+P(70 or more power user friends) = ?
+
+##### Solution:
+0.112763
+
+```{r}
+
+#Probability of having 70 or more power user friends
+sum(dbinom(70:245, size = 245, p = 0.25))
+#The probability value calculated using the above function is an approxiamted/normalised value. the exact value when calculated using the manual method or Z- score method comes out to be 0.098 
+
+#Plotting the binomial distribution
+plot(0:245, dbinom(0:245, size = 245, p = 0.25),type='h',main='Binomial Distribution (n=245, p=0.25)',
+     ylab='Probability',
+     xlab ='Successes',)
+
+```
+
+
+#### Question 4: 
+According to a 2014 Gallup poll, 56% of uninsured Americans who plan to get health insurance say they will do so through a government health insurance exchange. What is the probability that in a random sample of 10 people exactly 6 plan to get health insurance through a government health insurance exchange?
+
+##### Solution:
+0.2427494
+
+```{r}
+
+#Probability of exactly 6 out of 10 people plan to get a health insurance through a government health insurance exchange
+dbinom(6, size = 10, p = 0.56)
+
+#Plotting the binomial distribution
+plot(0:10, dbinom(0:10, size = 10, p = 0.56),type='h',main='Binomial Distribution (n=10, p=0.56)',
+     ylab='Probability',
+     xlab ='Successes',)
+
+```
+
