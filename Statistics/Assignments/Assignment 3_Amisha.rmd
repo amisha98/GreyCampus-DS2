@@ -1,0 +1,275 @@
+---
+title: "Assignment 3"
+author: "Amisha Murarka"
+date: "02/03/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Assignment 3: Analysing COVID19 Data
+
+## Question
+
+Please use data set COVID19.csv for next questions. This data set is in a raw format. You have to clean this dataset before any analysis. Data set is totally raw downloaded from worldmeters today (March 1st 2021) (<https://www.worldometers.info/coronavirus/>). Hence, data cleaning and manipulation are required. Please also explain your results with numerical summary as well as graphs, wherever it is applicable. Please check your data also, if it is skewed or normally distributed. Results should be based on skewness or normal distribution.
+
+The COVID19.csv data set is raw data extracted from Worldometer (March 1st, 2021). Use COVID19.csv data to answer the questions considering the following:
+
+-   The data set requires data cleaning and manipulation before any analysis.
+
+-   Explain your results with a numerical summary and graphs, wherever it is applicable.
+
+-   The results should be based on skewness or normal distribution, therefore, do check your data if it is skewed or normally distributed.
+
+**Step 1:** Keep rows containing country information and remove the rest of the rows. Apart from the country, you should not be having any other row. Move on to the next step only after finishing this.
+
+**Step 2:** Calculate the missing percentage of each column using a function. If any column has missing data more than 5%, please remove it. (Do not try this for rows)
+
+**Step 3:** Give a better column name after cleaning your data.
+
+1.  Create plots for total cases, total death, and total recovery. Explain with a figure for each.
+
+2.  Create a plot to examine the correlation between total cases and total population. Explain if there is any correlation between total cases and total population.
+
+3.  Create a plot to examine the correlation between Tot Cases/1M pop and total population. Explain if there is any correlation between them?
+
+4.  Which column do you feel is better for comparison purposes, total cases or TotCases/1M pop. Explain.
+
+5.  Create a plot to examine the correlation between total cases and total death. Explain the figure.
+
+6.  Create a plot to examine the correlation between total cases and Deaths/1M pop. Explain the figure. Which column is more suitable to compare the result, total death or Death/1Mpop?
+
+7.  Compare Tot Cases/1M pop by continent, and explain your result.
+
+8.  Compare Deaths/1M pop by continent, and explain your result.
+
+9.  Which country is best among testing the COVID19 and which country is worst? There are two columns total test vs. test/M. Choose appropriate column.
+
+10. Compare your COVID19 test results by continent? There are two columns total test vs test/M. Choose appropriate column.
+
+11. Check if Tests/1M pop is skewed or normally distributed.
+
+## Reading The Data
+
+In the first step, we will read the data in R and look at its structure.
+
+```{r}
+# The first 8 rows of the dataset contains summary information hence we skip those rows when reading it into R
+data <- read.csv("Datasets/COVID19.csv", na.strings = "NA")
+
+```
+
+The first 8 rows of the data contains summarized information hence we will remove that.
+
+The "X" column is redundant, which is why we will remove that as well.
+
+```{r}
+
+data
+
+```
+
+## Cleaning The Data
+
+1.  Removing unnecessary rows and columns
+2.  Changing column names
+
+```{r}
+
+tail(data,10)
+# The first and last 8 rows contain summary information. Hence we will delete those rows 
+# We also remove the first column as it is redundant
+data <- data[-c(1:8,230:237),-1]
+tail(data,10)
+
+#Replacing blanks with NA
+data[data == "" | data == " "] <- NA  
+
+#Changing column names
+
+colnames(data) <- c("SerialNo","Country","TotalCases","NewCases","TotalDeaths","NewDeaths","TotalRecovered","NewRecovered","ActiveCases","CriticalCases","CasesPerMillionPop","DeathsPerMillionPop","TotalTests","TestsPerMillionPop","Population","Continent","OneCaseEveryXPop","OneDeathEveryXPop","OneTestEveryXPop")
+
+str(data)
+```
+
+3.  Type Conversions:
+
+    1.  Converting columns containing categorical data into factor
+
+    2.  Converting columns containing numerical data into numeric
+
+        1.  Columns contain text string such as (,)(+)(N/A) which need to be replaced
+
+        2.  The columns will then be converted into numeric
+
+```{r}
+
+#Converting Continent to Factor Type
+data$Continent <- as.factor(data$Continent)
+
+#Converting character columns to numeric by replacing text string (,)(+)(N/A)
+for(i in c(3,4,5,7:15,17:19)) {
+  data[,i] <- gsub(",","",data[,i])
+  data[,i] <- gsub("+","",data[,i])
+  data[,i] <- gsub("N/A","",data[,i])
+  data[,i] <- as.numeric(data[,i])
+}
+
+str(data)
+
+```
+
+## Removing NAs
+
+```{r}
+
+# colMeans(is.na(data))
+
+library(dplyr)
+
+summ <- data %>% 
+   summarise_each(funs(100*mean(is.na(.))))
+summ
+ # Removing columns with more than 10% NA's
+ 
+ cols <- c()
+ for (i in 1:length(summ)){
+   if(summ[,i] > 10.0) {
+     cols <- c(cols, i)
+   } 
+ }
+ cols
+ data <- data[,-cols]
+ str(data)
+```
+
+## Checking for Normality and Skewness
+
+From the below results, we can see that the data is right skewed and not normally distributed.
+
+```{r}
+#install.packages("moments")
+library("moments")
+skew <- c()
+for(i in 3:11) {
+  hist(data[,i], main = colnames(data[,i]))
+  #skewness(data[,i])
+  skew <- c(skew,skewness(data[,i]))
+}
+skew
+
+```
+
+## Plots
+
+1. Total Cases, Total Deaths and Total Recovery by Country
+  Since Country is a categorical variable, we will be plotting this using a bar plot
+  
+  Analysis:
+  1. Looking at the three graphs, we can see that Europe and NA have the highest amount of cases followed by Asia
+  2. But the death rate is also very high in EU and NA compared to Asia which has has a greater recovery rate when            comparing to the total number of cases
+
+```{r}
+
+# Q: Create plots for total cases, total death, and total recovery. Explain with a figure for each.
+
+library(ggplot2)    
+#ggplot(data) + geom_bar(aes(fill = TotalRecovered,x = Continent, y = TotalCases), stat = "identity")
+ggplot(data) + geom_bar(aes(y = TotalCases, x = Continent), stat = "identity", na.rm = TRUE)
+ggplot(data) + geom_bar(aes(x = Continent, y = TotalDeaths), stat = "identity", na.rm = TRUE)
+ggplot(data) + geom_bar(aes(x = Continent, y = TotalRecovered), stat = "identity", na.rm = TRUE)
+
+
+```
+```{r}
+# Q: Create a plot to examine the correlation between total cases and total population. Explain if there is any correlation between total cases and total population.
+library(dplyr)
+library(ggplot2)  
+data %>%
+  ggplot(aes(y = TotalCases, x = Population))+
+  geom_point()+
+  labs(title = "Correlation between Total Cases and Total Population",
+       y = "Total Cases")
+
+# Basis this graph we see that there is a slight correlation between the total number of cases and total population but the relationship is not very strong and has a lot of outliers.
+       
+# Q: Create a plot to examine the correlation between Tot Cases/1M pop and total population. Explain if there is any correlation between them?
+data %>%
+  ggplot(aes(x = CasesPerMillionPop, y = Population))+
+  geom_point()+
+  labs(title = "Correlation between Total Cases Per Million Population and Total Population",
+       y = "Population")
+
+# Basis this graph we see that there is no correlation between the total population and the total cases per million population. The population does not seem to have any effect on the cases per million population because countries with lower population have low as well a high number of cases per million population. 
+
+# Q: Which column do you feel is better for comparison purposes, total cases or TotCases/1M pop. Explain.
+# If we are trying to understand if the cases in countries is uniformly distributed across its population then Total Cases Per Million Population is a better indicator because it shows that the cases are not uniformly distributed. Some regions within a country contribute the most to the total cases present in a country instead of the virus being spread out evenly within the country. It helps to understand that the focus should be on those particular regions mainly. This way resources can be distributed evenly. Else if we are trying to understand which variable is a better predictor for Population, then total cases is slightly better than Cases per million population.
+
+# Q: Create a plot to examine the correlation between total cases and total death. Explain the figure.
+data %>%
+  ggplot(aes(y = TotalDeaths, x = TotalCases))+
+  geom_point()+
+  labs(title = "Correlation between Total Cases and Total Deaths",
+       y = "Total Deaths")
+
+# Basis this graph we can see that there is a very strong positive correlation between Total Deaths and Total Cases i.e. as the number of cases increases, the deaths also increase
+
+# Q: Create a plot to examine the correlation between total cases and Deaths/1M pop. Explain the figure. Which column is more suitable to compare the result, total death or Death/1Mpop?
+data %>%
+  ggplot(aes(x = DeathsPerMillionPop, y = TotalCases))+
+  geom_point()+
+  labs(title = "Correlation between Total Cases and Total Deaths Per Million Population",
+       y = "Total Cases")
+
+# Basis this graph we see that there is no correlation between the total cases and the total deaths per million population. The number of cases does not seem to have any effect on the deaths per million population because countries with lower number of cases have low as well a high number of deaths per million population. 
+
+# Q: Compare Tot Cases/1M pop by continent, and explain your result.
+boxplot(CasesPerMillionPop ~ Continent, data = data)
+# Basis the graph, we can see that Europe has the highest cases per million population and Africa has the lowest
+
+# Q: Compare Deaths/1M pop by continent, and explain your result.
+boxplot(DeathsPerMillionPop ~ Continent, data = data)
+# Basis the graph, we can see that Europe has the highest deaths per million population and Africa has the lowest
+
+# Q: Which country is best among testing the COVID19 and which country is worst? There are two columns total test vs. test/M. Choose appropriate column.
+barplot(TestsPerMillionPop ~ Country, data = data)
+#barplot(TotalTests ~ Country, data = data)
+
+# Q: Compare your COVID19 test results by continent? There are two columns total test vs test/M. Choose appropriate column.
+boxplot(TestsPerMillionPop ~ Continent, data = data)
+#boxplot(TotalTests ~ Continent, data = data)
+
+# Q: Check if Tests/1M pop is skewed or normally distributed.
+hist(data$TestsPerMillionPop)
+# The data is skewed
+
+```
+## Method 2
+
+```{r}
+#install.packages("ggpubr")
+library(ggpubr)
+# cor(data$Population, data$TotalCases,  method = "pearson", use = "complete.obs")
+ggscatter(data, x = "Population", y = "TotalCases", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Population", ylab = "Total Cases")
+
+ggscatter(data, y = "Population", x = "CasesPerMillionPop", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          ylab = "Population", xlab = "Total Cases Per Million Population")
+
+ggscatter(data, x = "TotalCases", y = "TotalDeaths", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          ylab = "Total Deaths", xlab = "Total Cases")
+
+ggscatter(data, x = "DeathsPerMillionPop", y = "TotalCases", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "DeathsPerMillionPop", ylab = "Total Cases")
+```
+
